@@ -16,11 +16,22 @@ interface PollActionsProps {
   poll: Poll;
 }
 
+/**
+ * Renders a card for a single poll, including actions like editing and deleting.
+ * The edit and delete buttons are only shown to the user who owns the poll.
+ * @param {PollActionsProps} props - The component props, containing the poll data.
+ */
 export default function PollActions({ poll }: PollActionsProps) {
   const { user } = useAuth();
+
+  /**
+   * Handles the deletion of the poll.
+   * It prompts the user for confirmation before calling the deletePoll server action.
+   */
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this poll?")) {
       await deletePoll(poll.id);
+      // Reload the page to reflect the deletion.
       window.location.reload();
     }
   };
@@ -39,6 +50,7 @@ export default function PollActions({ poll }: PollActionsProps) {
           </div>
         </div>
       </Link>
+      {/* Show edit and delete buttons only if the current user is the owner of the poll. */}
       {user && user.id === poll.user_id && (
         <div className="flex gap-2 p-2">
           <Button asChild variant="outline" size="sm">

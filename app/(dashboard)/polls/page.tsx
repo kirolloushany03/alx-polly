@@ -3,7 +3,12 @@ import { Button } from '@/components/ui/button';
 import { getUserPolls } from '@/app/lib/actions/poll-actions';
 import PollActions from './PollActions'; 
 
+/**
+ * The main page for the user's dashboard, displaying a list of their created polls.
+ * This is a server component, so it fetches data directly on the server.
+ */
 export default async function PollsPage() {
+  // Fetch the polls for the currently authenticated user.
   const { polls, error } = await getUserPolls();
 
   return (
@@ -15,6 +20,7 @@ export default async function PollsPage() {
         </Button>
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Conditionally render the list of polls or a message if the user has no polls. */}
         {polls && polls.length > 0 ? (
           polls.map((poll) => <PollActions key={poll.id} poll={poll} />)
         ) : (
