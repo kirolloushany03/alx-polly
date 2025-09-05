@@ -80,13 +80,24 @@ export async function submitVote(pollId: string, optionIndex: number) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Optionally require login to vote
-  // if (!user) return { error: 'You must be logged in to vote.' };
+  if (!user) return { error: "You must be logged in to vote." };
+
+  // Check if user has already voted
+  const { data: existingVote, error: existingVoteError } = await supabase
+    .from("votes")
+    .select("id")
+    .eq("poll_id", pollId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (existingVote) {
+    return { error: "You have already voted on this poll." };
+  }
 
   const { error } = await supabase.from("votes").insert([
     {
       poll_id: pollId,
-      user_id: user?.id ?? null,
+      user_id: user.id,
       option_index: optionIndex,
     },
   ]);
