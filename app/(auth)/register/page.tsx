@@ -8,10 +8,23 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { register } from '@/app/lib/actions/auth-actions';
 
+/**
+ * Renders the registration page.
+ * This component provides a form for new users to sign up.
+ * It handles form submission, validates passwords, displays loading and error states, and redirects upon success.
+ */
 export default function RegisterPage() {
+  // State for storing registration-related error messages.
   const [error, setError] = useState<string | null>(null);
+  // State to manage the loading status of the form submission.
   const [loading, setLoading] = useState(false);
 
+  /**
+   * Handles the form submission for user registration.
+   * It validates that passwords match, calls the register server action,
+   * and manages the UI state based on the result.
+   * @param event - The form submission event.
+   */
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
@@ -22,19 +35,24 @@ export default function RegisterPage() {
     const password = formData.get('password') as string;
     const confirmPassword = formData.get('confirmPassword') as string;
 
+    // Basic client-side validation for matching passwords.
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       setLoading(false);
       return;
     }
 
+    // Call the server action to attempt to register the new user.
     const result = await register({ name, email, password });
 
     if (result?.error) {
+      // If there's an error, display it to the user.
       setError(result.error);
       setLoading(false);
     } else {
-      window.location.href = '/polls'; // Full reload to pick up session
+      // On successful registration, perform a full page reload to the polls page.
+      // This ensures the new session is picked up correctly by the server.
+      window.location.href = '/polls';
     }
   };
 
