@@ -3,18 +3,25 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
-// CREATE POLL
+/**
+ * Creates a new poll.
+ * This server action handles form submission for creating a new poll.
+ * It validates the input, ensures the user is authenticated, and inserts the new poll into the database.
+ * @param formData - The form data from the poll creation form.
+ * @returns An object with an error property if creation fails, otherwise null.
+ */
 export async function createPoll(formData: FormData) {
   const supabase = await createClient();
 
   const question = formData.get("question") as string;
   const options = formData.getAll("options").filter(Boolean) as string[];
 
+  // Validate that the question and at least two options are provided.
   if (!question || options.length < 2) {
     return { error: "Please provide a question and at least two options." };
   }
 
-  // Get user from session
+  // Ensure the user is authenticated before creating a poll.
   const {
     data: { user },
     error: userError,
@@ -38,11 +45,15 @@ export async function createPoll(formData: FormData) {
     return { error: error.message };
   }
 
+  // Revalidate the polls page to show the new poll.
   revalidatePath("/polls");
   return { error: null };
 }
 
-// GET USER POLLS
+/**
+ * Fetches all polls created by the currently authenticated user.
+ * @returns An object containing the user's polls and an error property if fetching fails.
+ */
 export async function getUserPolls() {
   const supabase = await createClient();
   const {
@@ -60,7 +71,12 @@ export async function getUserPolls() {
   return { polls: data ?? [], error: null };
 }
 
-// GET POLL BY ID
+/**
+ * Fetches a single poll by its ID.
+ * This action does not perform any ownership checks, so it can be used for public poll pages.
+ * @param id - The ID of the poll to fetch.
+ * @returns An object containing the poll data and an error property if fetching fails.
+ */
 export async function getPollById(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -73,7 +89,13 @@ export async function getPollById(id: string) {
   return { poll: data, error: null };
 }
 
-// SUBMIT VOTE
+/**
+ * Submits a vote for a specific poll option.
+ * It ensures that a user is logged in and has not already voted on the poll.
+ * @param pollId - The ID of the poll being voted on.
+ * @param optionIndex - The index of the option being voted for.
+ * @returns An object with an error property if voting fails, otherwise null.
+ */
 export async function submitVote(pollId: string, optionIndex: number) {
   const supabase = await createClient();
   const {
@@ -82,8 +104,8 @@ export async function submitVote(pollId: string, optionIndex: number) {
 
   if (!user) return { error: "You must be logged in to vote." };
 
-  // Check if user has already voted
-  const { data: existingVote, error: existingVoteError } = await supabase
+  // Check if the user has already voted on this poll to prevent duplicates.
+  const { data: existingVote } = await supabase
     .from("votes")
     .select("id")
     .eq("poll_id", pollId)
@@ -94,6 +116,7 @@ export async function submitVote(pollId: string, optionIndex: number) {
     return { error: "You have already voted on this poll." };
   }
 
+  // Insert the new vote into the database.
   const { error } = await supabase.from("votes").insert([
     {
       poll_id: pollId,
@@ -106,7 +129,12 @@ export async function submitVote(pollId: string, optionIndex: number) {
   return { error: null };
 }
 
-// DELETE POLL
+/**
+ * Deletes a poll.
+ * This action includes an ownership check to ensure that only the poll's creator can delete it.
+ * @param id - The ID of the poll to delete.
+ * @returns An object with an error property if deletion fails, otherwise null.
+ */
 export async function deletePoll(id: string) {
   const supabase = await createClient();
 
@@ -121,6 +149,7 @@ export async function deletePoll(id: string) {
     return { error: "You must be logged in to delete a poll." };
   }
 
+  // Ensure that the user deleting the poll is the owner.
   const { error } = await supabase
     .from("polls")
     .delete()
@@ -132,7 +161,13 @@ export async function deletePoll(id: string) {
   return { error: null };
 }
 
-// UPDATE POLL
+/**
+ * Updates an existing poll.
+ * This action includes an ownership check to ensure that only the poll's creator can update it.
+ * @param pollId - The ID of the poll to update.
+ * @param formData - The form data containing the updated question and options.
+ * @returns An object with an error property if the update fails, otherwise null.
+ */
 export async function updatePoll(pollId: string, formData: FormData) {
   const supabase = await createClient();
 
@@ -143,7 +178,6 @@ export async function updatePoll(pollId: string, formData: FormData) {
     return { error: "Please provide a question and at least two options." };
   }
 
-  // Get user from session
   const {
     data: { user },
     error: userError,
@@ -155,7 +189,7 @@ export async function updatePoll(pollId: string, formData: FormData) {
     return { error: "You must be logged in to update a poll." };
   }
 
-  // Only allow updating polls owned by the user
+  // Ensure that the user updating the poll is the owner.
   const { error } = await supabase
     .from("polls")
     .update({ question, options })
@@ -166,5 +200,7 @@ export async function updatePoll(pollId: string, formData: FormData) {
     return { error: error.message };
   }
 
+  revalidatePath(`/polls/${pollId}`);
+  revalidatePath("/polls");
   return { error: null };
 }
