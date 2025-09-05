@@ -1,13 +1,18 @@
 import { getPollById } from '@/app/lib/actions/poll-actions';
-import { notFound } from 'next/navigation';
-// Import the client component
+import { notFound, redirect } from 'next/navigation';
+import { getCurrentUser } from '@/app/lib/actions/auth-actions';
 import EditPollForm from './EditPollForm';
 
 export default async function EditPollPage({ params }: { params: { id: string } }) {
   const { poll, error } = await getPollById(params.id);
+  const user = await getCurrentUser();
 
   if (error || !poll) {
     notFound();
+  }
+
+  if (poll.user_id !== user?.id) {
+    redirect('/polls');
   }
 
   return (
