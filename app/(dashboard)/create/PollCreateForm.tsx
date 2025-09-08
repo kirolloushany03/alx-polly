@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { createPoll } from "@/app/lib/actions/poll-actions";
+import { useState, FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +11,8 @@ import { Label } from "@/components/ui/label";
  * and displays error or success messages.
  */
 export default function PollCreateForm() {
+  // State to hold the poll question.
+  const [question, setQuestion] = useState("");
   // State to hold the list of poll options.
   const [options, setOptions] = useState(["", ""]);
   // State for storing any errors that occur during poll creation.
@@ -44,28 +45,50 @@ export default function PollCreateForm() {
     }
   };
 
+  /**
+   * Handles the form submission to create a new poll.
+   * @param e - The form event.
+   */
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(false);
+
+    const res = await fetch("/api/polls", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        question,
+        options: options.filter(Boolean), // Filter out empty options
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error || "Something went wrong.");
+    } else {
+      setSuccess(true);
+      // Redirect to the polls page after a short delay to show the success message.
+      setTimeout(() => {
+        window.location.href = "/polls";
+      }, 1200);
+    }
+  };
+
   return (
-    <form
-      // The form action calls the createPoll server action directly.
-      action={async (formData) => {
-        setError(null);
-        setSuccess(false);
-        const res = await createPoll(formData);
-        if (res?.error) {
-          setError(res.error);
-        } else {
-          setSuccess(true);
-          // Redirect to the polls page after a short delay to show the success message.
-          setTimeout(() => {
-            window.location.href = "/polls";
-          }, 1200);
-        }
-      }}
-      className="space-y-6 max-w-md mx-auto"
-    >
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-md mx-auto">
       <div>
         <Label htmlFor="question">Poll Question</Label>
-        <Input name="question" id="question" required />
+        <Input
+          name="question"
+          id="question"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          required
+        />
       </div>
       <div>
         <Label>Options</Label>
