@@ -85,6 +85,19 @@ The application will be available at `http://localhost:3000`.
 -   **Vote on a Poll**: Click on any poll to view its details and cast your vote.
 -   **Edit/Delete Polls**: You can edit or delete your own polls from the dashboard.
 
+## API Routes
+
+The application provides a RESTful API for managing polls.
+
+### Polls
+
+-   `GET /api/polls`: Fetches all polls for the authenticated user.
+-   `POST /api/polls`: Creates a new poll.
+-   `GET /api/polls/:id`: Fetches a single poll by its ID.
+-   `PUT /api/polls/:id`: Updates a poll.
+-   `DELETE /api/polls/:id`: Deletes a poll.
+-   `POST /api/polls/:id/vote`: Submits a vote for a poll.
+
 ## Running Tests
 
 This project is not yet configured with a test suite. To add testing, you would typically:
