@@ -4,8 +4,16 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { getPollById, submitVote } from '@/app/lib/actions/poll-actions';
-import { Poll } from '@/app/lib/types';
+
+// Simplified poll type to match the data structure from the API
+interface Poll {
+  id: string;
+  question: string;
+  options: string[];
+  description?: string;
+  created_at: string;
+  votes: { option_index: number }[];
+}
 
 /**
  * Renders the detailed view of a single poll, allowing users to vote and see results.
@@ -23,54 +31,61 @@ export default function PollDetailPage({ params }: { params: { id: string } }) {
   const [votes, setVotes] = useState<number[]>([]);
 
   useEffect(() => {
-    /**
-     * Fetches the poll data from the server.
-     */
     const fetchPoll = async () => {
-      const { poll: fetchedPoll, error } = await getPollById(params.id);
-      if (error || !fetchedPoll) {
-        setError('Poll not found.');
-      } else {
-        setPoll(fetchedPoll as any);
-        // Initialize votes count to 0 for each option.
-        setVotes(new Array((fetchedPoll as any).options.length).fill(0));
+      try {
+        const res = await fetch(`/api/polls/${params.id}`);
+        if (!res.ok) {
+          throw new Error("Poll not found.");
+        }
+        const data = await res.json();
+        setPoll(data.poll);
+
+        // Initialize votes count based on fetched votes
+        const initialVotes = new Array(data.poll.options.length).fill(0);
+        data.poll.votes.forEach((vote: { option_index: number }) => {
+          initialVotes[vote.option_index]++;
+        });
+        setVotes(initialVotes);
+      } catch (err: any) {
+        setError(err.message);
       }
     };
 
     fetchPoll();
   }, [params.id]);
 
-  /**
-   * Handles the vote submission.
-   * It calls the submitVote server action and updates the UI to show the results.
-   */
   const handleVote = async () => {
     if (selectedOption === null) return;
-    
+
     setIsSubmitting(true);
     setError(null);
 
-    const result = await submitVote(params.id, selectedOption);
+    try {
+      const res = await fetch(`/api/polls/${params.id}/vote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ optionIndex: selectedOption }),
+      });
 
-    if (result?.error) {
-      setError(result.error);
-    } else {
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to submit vote.");
+      }
+
       setHasVoted(true);
-      // This is a simplified representation of vote results.
-      // In a real app, you would refetch the vote counts or update them based on the response.
       const newVotes = [...votes];
       newVotes[selectedOption] += 1;
       setVotes(newVotes);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
-  /**
-   * Calculates the percentage of votes for a given option.
-   * @param optionVotes - The number of votes for the option.
-   * @param totalVotes - The total number of votes for the poll.
-   * @returns The percentage of votes.
-   */
   const getPercentage = (optionVotes: number, totalVotes: number) => {
     if (totalVotes === 0) return 0;
     return Math.round((optionVotes / totalVotes) * 100);
@@ -92,32 +107,29 @@ export default function PollDetailPage({ params }: { params: { id: string } }) {
           <Button variant="outline" asChild>
             <Link href={`/polls/${params.id}/edit`}>Edit Poll</Link>
           </Button>
-          <Button variant="outline" className="text-red-500 hover:text-red-700">
-            Delete
-          </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">{poll.question}</CardTitle>
-          <CardDescription>{(poll as any).description || 'Vote for your favorite option below.'}</CardDescription>
+          <CardDescription>{poll.description || 'Vote for your favorite option below.'}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {!hasVoted ? (
             <div className="space-y-3">
-              {(poll as any).options.map((option: string, index: number) => (
-                <div 
-                  key={index} 
+              {poll.options.map((option: string, index: number) => (
+                <div
+                  key={index}
                   className={`p-3 border rounded-md cursor-pointer transition-colors ${selectedOption === index ? 'border-blue-500 bg-blue-50' : 'hover:bg-slate-50'}`}
                   onClick={() => setSelectedOption(index)}
                 >
                   {option}
                 </div>
               ))}
-              <Button 
-                onClick={handleVote} 
-                disabled={selectedOption === null || isSubmitting} 
+              <Button
+                onClick={handleVote}
+                disabled={selectedOption === null || isSubmitting}
                 className="mt-4"
               >
                 {isSubmitting ? 'Submitting...' : 'Submit Vote'}
@@ -126,15 +138,15 @@ export default function PollDetailPage({ params }: { params: { id: string } }) {
           ) : (
             <div className="space-y-4">
               <h3 className="font-medium">Results:</h3>
-              {(poll as any).options.map((option: string, index: number) => (
+              {poll.options.map((option: string, index: number) => (
                 <div key={index} className="space-y-1">
                   <div className="flex justify-between text-sm">
                     <span>{option}</span>
                     <span>{getPercentage(votes[index], totalVotes)}% ({votes[index]} votes)</span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2.5">
-                    <div 
-                      className="bg-blue-600 h-2.5 rounded-full" 
+                    <div
+                      className="bg-blue-600 h-2.5 rounded-full"
                       style={{ width: `${getPercentage(votes[index], totalVotes)}%` }}
                     ></div>
                   </div>
@@ -148,21 +160,9 @@ export default function PollDetailPage({ params }: { params: { id: string } }) {
           {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         </CardContent>
         <CardFooter className="text-sm text-slate-500 flex justify-between">
-          <span>Created on {new Date((poll as any).created_at).toLocaleDateString()}</span>
+          <span>Created on {new Date(poll.created_at).toLocaleDateString()}</span>
         </CardFooter>
       </Card>
-
-      <div className="pt-4">
-        <h2 className="text-xl font-semibold mb-4">Share this poll</h2>
-        <div className="flex space-x-2">
-          <Button variant="outline" className="flex-1">
-            Copy Link
-          </Button>
-          <Button variant="outline" className="flex-1">
-            Share on Twitter
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }

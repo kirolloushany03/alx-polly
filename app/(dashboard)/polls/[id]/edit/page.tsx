@@ -1,10 +1,31 @@
-import { getPollById } from '@/app/lib/actions/poll-actions';
 import { notFound, redirect } from 'next/navigation';
-import { getCurrentUser } from '@/app/lib/actions/auth-actions';
+import { cookies } from 'next/headers';
+import { createClient } from '@/lib/supabase/server';
 import EditPollForm from './EditPollForm';
 
+async function getPoll(id: string) {
+  const cookieStore = cookies();
+  const supabase = await createClient(cookieStore);
+  const { data, error } = await supabase
+    .from('polls')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error) {
+    return { poll: null, error };
+  }
+  return { poll: data, error: null };
+}
+
+async function getCurrentUser() {
+    const cookieStore = cookies();
+    const supabase = await createClient(cookieStore);
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
+}
+
 export default async function EditPollPage({ params }: { params: { id: string } }) {
-  const { poll, error } = await getPollById(params.id);
+  const { poll, error } = await getPoll(params.id);
   const user = await getCurrentUser();
 
   if (error || !poll) {

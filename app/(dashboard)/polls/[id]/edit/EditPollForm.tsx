@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { updatePoll } from '@/app/lib/actions/poll-actions';
+import { useState, FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,26 +22,38 @@ export default function EditPollForm({ poll }: { poll: any }) {
     }
   };
 
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(false);
+
+    const res = await fetch(`/api/polls/${poll.id}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question,
+          options: options.filter(Boolean),
+        }),
+      });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error || 'Something went wrong.');
+    } else {
+      setSuccess(true);
+      setTimeout(() => {
+        window.location.href = '/polls';
+      }, 1200);
+    }
+  };
+
+
   return (
-    <form
-      action={async (formData) => {
-        setError(null);
-        setSuccess(false);
-        formData.set('question', question);
-        formData.delete('options');
-        options.forEach((opt) => formData.append('options', opt));
-        const res = await updatePoll(poll.id, formData);
-        if (res?.error) {
-          setError(res.error);
-        } else {
-          setSuccess(true);
-          setTimeout(() => {
-            window.location.href = '/polls';
-          }, 1200);
-        }
-      }}
-      className="space-y-6"
-    >
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <Label htmlFor="question">Poll Question</Label>
         <Input

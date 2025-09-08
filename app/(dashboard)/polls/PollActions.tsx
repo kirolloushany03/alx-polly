@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useAuth } from "@/app/lib/context/auth-context";
 import { Button } from "@/components/ui/button";
-import { deletePoll } from "@/app/lib/actions/poll-actions";
 
 interface Poll {
   id: string;
@@ -30,7 +29,7 @@ export default function PollActions({ poll }: PollActionsProps) {
    */
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this poll?")) {
-      await deletePoll(poll.id);
+      await fetch(`/api/polls/${poll.id}`, { method: 'DELETE' });
       // Reload the page to reflect the deletion.
       window.location.reload();
     }
