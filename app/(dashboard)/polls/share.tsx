@@ -13,6 +13,8 @@ import {
 import { Copy, Share2, Twitter, Facebook, Mail } from "lucide-react";
 import { toast } from "sonner";
 
+import { sanitize } from "@/app/lib/utils";
+
 interface VulnerableShareProps {
   pollId: string;
   pollTitle: string;
@@ -41,7 +43,7 @@ export default function VulnerableShare({
   };
 
   const shareOnTwitter = () => {
-    const text = encodeURIComponent(`Check out this poll: ${pollTitle}`);
+    const text = encodeURIComponent(`Check out this poll: ${sanitize(pollTitle)}`);
     const url = encodeURIComponent(shareUrl);
     window.open(
       `https://twitter.com/intent/tweet?text=${text}&url=${url}`,
@@ -58,7 +60,7 @@ export default function VulnerableShare({
   };
 
   const shareViaEmail = () => {
-    const subject = encodeURIComponent(`Poll: ${pollTitle}`);
+    const subject = encodeURIComponent(`Poll: ${sanitize(pollTitle)}`);
     const body = encodeURIComponent(
       `Hi! I'd like to share this poll with you: ${shareUrl}`,
     );
