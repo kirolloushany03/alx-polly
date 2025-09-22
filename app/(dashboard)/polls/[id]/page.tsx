@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import VulnerableShare from '../share';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+
 
 // Simplified poll type to match the data structure from the API
 interface Poll {
@@ -147,20 +149,17 @@ export default function PollDetailPage({ params }: { params: { id: string } }) {
           ) : (
             <div className="space-y-4">
               <h3 className="font-medium">Results:</h3>
-              {poll.options.map((option: string, index: number) => (
-                <div key={index} className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span>{option}</span>
-                    <span>{getPercentage(votes[index], totalVotes)}% ({votes[index]} votes)</span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2.5">
-                    <div
-                      className="bg-blue-600 h-2.5 rounded-full"
-                      style={{ width: `${getPercentage(votes[index], totalVotes)}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
+              <div style={{ width: '100%', height: 300 }}>
+                <ResponsiveContainer>
+                  <BarChart data={poll.options.map((option, index) => ({ name: option, votes: votes[index] }))}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Bar dataKey="votes" fill="#3b82f6" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
               <div className="text-sm text-slate-500 pt-2">
                 Total votes: {totalVotes}
               </div>
