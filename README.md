@@ -10,6 +10,14 @@ Welcome to ALX Polly, a full-stack polling application built with Next.js, TypeS
 -   **UI**: [Tailwind CSS](https://tailwindcss.com/) with [shadcn/ui](https://ui.shadcn.com/)
 -   **State Management**: React Server Components and Client Components
 
+## Features
+
+-   **User Authentication**: Secure sign-up and login functionality.
+-   **Poll Management**: Users can create, view, edit, and delete their own polls.
+-   **Interactive Voting**: Cast votes on polls and see results update in real-time.
+-   **Visual Results**: Poll results are displayed in a clear bar chart.
+-   **Easy Sharing**: Share polls with others via a direct link or a scannable QR code.
+
 ## Getting Started
 
 To get the application running on your local machine, follow these steps.
