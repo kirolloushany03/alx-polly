@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import VulnerableShare from '../share';
 
 // Simplified poll type to match the data structure from the API
 interface Poll {
@@ -29,6 +30,7 @@ export default function PollDetailPage({ params }: { params: { id: string } }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [votes, setVotes] = useState<number[]>([]);
+  const [showShare, setShowShare] = useState(false);
 
   useEffect(() => {
     const fetchPoll = async () => {
@@ -107,8 +109,15 @@ export default function PollDetailPage({ params }: { params: { id: string } }) {
           <Button variant="outline" asChild>
             <Link href={`/polls/${params.id}/edit`}>Edit Poll</Link>
           </Button>
+          <Button variant="outline" onClick={() => setShowShare(!showShare)}>
+            Share
+          </Button>
         </div>
       </div>
+
+      {showShare && poll && (
+        <VulnerableShare pollId={poll.id} pollTitle={poll.question} />
+      )}
 
       <Card>
         <CardHeader>

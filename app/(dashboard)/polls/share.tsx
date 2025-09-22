@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Copy, Share2, Twitter, Facebook, Mail } from "lucide-react";
 import { toast } from "sonner";
+import QRCode from "react-qr-code";
 
 import { sanitize } from "@/app/lib/utils";
 
@@ -130,6 +131,20 @@ export default function VulnerableShare({
               <Mail className="h-4 w-4" />
               Email
             </Button>
+          </div>
+        </div>
+
+        {/* QR Code Display */}
+        <div className="space-y-2 pt-4 text-center">
+          <label className="text-sm font-medium text-gray-700">
+            Share via QR Code
+          </label>
+          <div className="flex justify-center p-4 bg-white rounded-lg">
+            {shareUrl ? (
+              <QRCode value={shareUrl} size={128} />
+            ) : (
+              <div className="w-32 h-32 bg-gray-200 animate-pulse rounded-lg" />
+            )}
           </div>
         </div>
       </CardContent>
